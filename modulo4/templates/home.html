@@ -4,35 +4,44 @@
 
 {% block content %}
 <h1>Olá, {{ nome_usuario }}!</h1>
+<hr>
+<h3>Nova Tarefa:</h3>
+<form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Adicionar Tarefa</button>
+</form>
+<hr>
+
 <p>Este HTML está separado do meu código Python.</p>
 
 <h3>Tecnologias que estou aprendendo:</h3>
 <ul>
     {% for tec in tecnologias %}
-        <li>{{ tec }}</li>
+    <li>{{ tec }}</li>
     {% endfor %}
 </ul>
 
 {% if nome_usuario == 'Vitor' %}
-    <p>Este é um conteúdo especial para o Vitor!</p>
+<p>Este é um conteúdo especial para o Vitor!</p>
 {% endif %}
 
 <hr>
 <h2>Minha Lista de Tarefas (do Banco de Dados):</h2>
 <ul>
     {% for tarefa in tarefas %}
-        <li>
-            {{ tarefa.titulo }}
-            {% if tarefa.concluida %}
-                (✓ Concluída)
-            {% else %}
-                (☐ Pendente)
-            {% endif %}
-            <br>
-            <small>Criada em: {{ tarefa.criada_em }}</small>
-        </li>
+    <li>
+        {{ tarefa.titulo }}
+        {% if tarefa.concluida %}
+        (✓ Concluída)
+        {% else %}
+        (☐ Pendente)
+        {% endif %}
+        <br>
+        <small>Criada em: {{ tarefa.criada_em }}</small>
+    </li>
     {% empty %}
-        <li>Você ainda não tem tarefas cadastradas.</li>
+    <li>Você ainda não tem tarefas cadastradas.</li>
     {% endfor %}
 </ul>
 {% endblock %}
