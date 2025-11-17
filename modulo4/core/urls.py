@@ -11,7 +11,7 @@ urlpatterns = [
     
     path('tarefa/<int:pk>/deletar/', views.deletar_tarefa, name='deletar_tarefa'),
     
-    path('login/', views.login,name='login'),
+
 ]
 
 
