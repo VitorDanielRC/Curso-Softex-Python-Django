@@ -3,48 +3,67 @@ from django.http import HttpResponse
 from .models import Tarefa
 from .models import execucao
 from .form import TarefaForm
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import login
+from django.contrib.auth.decorators import login_required
+
+@login_required
 # Create your views here.
 def home(request):
-    if request.method == 'POST':
-        form = TarefaForm(request.POST)
+ if request.method == 'POST':
+    form = TarefaForm(request.POST)
+ if form.is_valid():
 
-        if form.is_valid():
-            form.save()
-            return redirect('home')
-    else:
-        form = TarefaForm() # Cria um formulário vaz
+    tarefa = form.save(commit=False)
+ 
+    tarefa.user = request.user
 
-    todas_as_tarefas = Tarefa.objects.all().order_by('criada_em')
-    execucao_as = execucao.objects.all()
-    context={
-        'nome_usuario':'Vitor',
-        'tecnologias':['python','Django','HTML','CSS'],
-        'tarefas': todas_as_tarefas,
-        'exe' : execucao_as,
-        'form':form
-    }
-    return render(request,'home.html',context)
+    tarefa.save()
+    return redirect('home')
+ else:
+    form = TarefaForm()
 
-def site(request):
-    return HttpResponse("<h1>Nova pasta</h1>")
+ todas_as_tarefas = Tarefa.objects.filter(user=request.user).order_by('criado_em')
 
+ context = {
+ 'nome_usuario': request.user.username, 
+ 'tecnologias': ['Autenticação', 'ForeignKey', 'Login'],
+ 'tarefas': todas_as_tarefas,
+ 'form': form,
+ }
+
+ return render(request, 'home.html', context)
+
+
+
+@login_required
 def concluir_tarefa(request, pk):
-# 1. Busca a tarefa pela 'pk' (ID) vinda da URL.
-# Se não achar, retorna um erro 404.
-    tarefa = get_object_or_404(Tarefa, pk=pk)
-# 2. Segurança: Apenas execute se o método for POST
+ # 2. Modifique o 'get_object_or_404'
+ # Busque a Tarefa pela 'pk' E ONDE o 'user' é o 'request.user'
+    tarefa = get_object_or_404(Tarefa, pk=pk, user=request.user)
     if request.method == 'POST':
-# 3. A Lógica de "Update"
         tarefa.concluida = True
         tarefa.save() # Não se esqueça de salvar!
-# 4. Redireciona de volta para a 'home' (Padrão PRG)
-    return redirect('home')
+        return redirect('home')
+    
+@login_required
 def deletar_tarefa(request, pk):
-# 1. Busca a tarefa
-    tarefa = get_object_or_404(Tarefa, pk=pk)
-# 2. Segurança: Apenas execute se o método for POST
+ # 3. Faça o mesmo filtro de segurança aqui
+    tarefa = get_object_or_404(Tarefa, pk=pk, user=request.user)
     if request.method == 'POST':
-# 3. A Lógica de "Delete"
         tarefa.delete()
-# 4. Redireciona de volta para a 'home'
-    return redirect('home')
+        return redirect('home')
+
+def register(request):
+    if request.method=='POST':
+        form=UserCreationForm(request.POST)
+    if form.is_valid():
+        user = form.save()
+        login(request,user)
+        return redirect('home')
+    else:
+        form = UserCreationForm()
+    context={'form':form}
+    return render(request,'register.html', context)
+        
+
