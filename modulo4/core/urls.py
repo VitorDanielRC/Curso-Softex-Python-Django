@@ -11,6 +11,7 @@ urlpatterns = [
     
     path('tarefa/<int:pk>/deletar/', views.deletar_tarefa, name='deletar_tarefa'),
     
+    path('register', view.register, name='register')
 
 ]
 
