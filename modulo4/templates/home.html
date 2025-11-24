@@ -1,62 +1,64 @@
 {% extends 'base.html' %}
-
-{% block title %}Página Inicial - Black{% endblock %}
-
+{% block title %}
+  Página Inicial - Meu Site
+{% endblock %}
 {% block content %}
-<h1>Olá, {{ nome_usuario }}!</h1>
-<hr>
-<h3>Nova Tarefa:</h3>
-<form method="POST">
+  <h1>Olá, {{ nome_usuario }}!</h1>
+  <hr />
+  <h3>Nova Tarefa:</h3>
+  <form method="POST">
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit">Adicionar Tarefa</button>
-</form>
-<hr>
-
-<p>Este HTML está separado do meu código Python.</p>
-
-<h3>Tecnologias que estou aprendendo:</h3>
-<ul>
+  </form>
+  <hr />
+  <p>Este HTML está separado do meu código Python.</p>
+  <h3>Tecnologias que estou aprendendo:</h3>
+  <ul>
     {% for tec in tecnologias %}
-    <li>{{ tec }}</li>
+      <li>{{ tec }}</li>
     {% endfor %}
-</ul>
+  </ul>
+  {% if nome_usuario == 'Júnior' %}
+    <p>Este é um conteúdo especial para o Júnior!</p>
+  {% endif %}
 
-{% if nome_usuario == 'Vitor' %}
-<p>Este é um conteúdo especial para o Vitor!</p>
-{% endif %}
-
-<hr>
-<h2>Minha Lista de Tarefas (do Banco de Dados):</h2>
-<ul style="list-style: none; padding: 0;">
+  <hr />
+  <h2>Minha Lista de Tarefas (do Banco de Dados):</h2>
+  <ul style="list-style: none; padding: 0;">
     {% for tarefa in tarefas %}
-    <li style="margin-bottom: 15px; border: 1px solid #ccc; padding: 10px;">
+      <li style="margin-bottom: 15px; border: 1px solid #ccc; padding: 10px;">
         {{ tarefa.titulo }}
         {% if tarefa.concluida %}
-        <strong style="color: green;">(✓ Concluída)</strong>
+          <strong style="color: green;">(✔ Concluída)</strong>
         {% else %}
-        <strong style="color: orange;">(☐ Pendente)</strong>
+          <strong style="color: orange;">(☐ Pendente)</strong>
         {% endif %}
-        <br>
-        <small>Criada em: {{ tarefa.criada_em|date:"d/m/Y H:i" }}</small>
-        <div style="margin-top:
+        <br />
+        <small>Criada em: {{ tarefa.criada_em|date:'d/m/Y H:i' }}</small> <div style="margin-top:
 10px;">
-            <form action="{% url 'deletar_tarefa' tarefa.pk %}" method="POST" style="display: inline;">
-                {% csrf_token %}
-                <button type="submit">Deletar</button>
-            </form>
-            {% if not tarefa.concluida %}
+          <form action="{% url 'deletar_tarefa' tarefa.pk %}" method="POST" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit">Deletar</button>
+          </form>
+          {% if not tarefa.concluida %}
             <form action="{% url 'concluir_tarefa' tarefa.pk %}" method="POST" style="display:
 inline;">
-                {% csrf_token %}
-                <button type="submit">Marcar como Concluída</button>
+              {% csrf_token %}
+              <button type="submit">Marcar como Concluída</button>
             </form>
-            {% endif %}
+          {% endif %}
+          {% if tarefa.concluida %}
+            <form action="{% url 'concluir_tarefa' tarefa.pk %}" method="POST" style="display:
+inline;">
+              {% csrf_token %}
+              <button type="submit">Marcar como Pendente</button>
+            </form>
+          {% endif %}
         </div>
-    </li>
+      </li>
     {% empty %}
-    <li>Você ainda não tem tarefas cadastradas.</li>
+      <li>Você ainda não tem tarefas cadastradas.</li>
     {% endfor %}
-</ul>
-
+  </ul>
 {% endblock %}
