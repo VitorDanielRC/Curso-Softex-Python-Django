@@ -15,16 +15,6 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='execucao',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('nome', models.CharField(max_length=200)),
-                ('local', models.CharField(max_length=200)),
-                ('hora', models.DateTimeField(auto_now_add=True)),
-                ('concluida', models.BooleanField(default=False)),
-            ],
-        ),
-        migrations.CreateModel(
             name='Tarefa',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
