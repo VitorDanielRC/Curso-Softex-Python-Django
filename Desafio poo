@@ -1,0 +1,65 @@
+class Usuario:
+    def __init__(self, nome: str, email: str):
+        self.nome = nome
+        self.__email = None
+        self.email = email
+
+    @property
+    def email(self) -> str:
+        return self.__email
+
+    @email.setter
+    def email(self, novo_email: str) -> None:
+        if "@" not in novo_email:
+            print("❌ Erro: email inválido, não contém '@'. Valor anterior preservado.")
+            return
+        self.__email = novo_email
+        print(f"✅ Email atualizado para: {self.__email}")
+
+
+class CanalEnvio:
+    def enviar(self, mensagem: str) -> None:
+        raise NotImplementedError("A subclasse precisa implementar o método 'enviar'.")
+
+
+class Email(CanalEnvio):
+    def enviar(self, mensagem: str) -> None:
+        print(f"📧 Enviando para servidor de email: {mensagem}")
+
+
+class SMS(CanalEnvio):
+    def enviar(self, mensagem: str) -> None:
+        print(f"📱 Enviando para operadora telefônica: {mensagem}")
+
+
+class SistemaAlerta:
+    def __init__(self, usuario: Usuario, canal: CanalEnvio):
+        self.usuario = usuario
+        self.canal = canal
+
+    def disparar(self, texto: str) -> None:
+        mensagem = f"Alerta para {self.usuario.nome}: {texto}"
+        self.canal.enviar(mensagem)
+
+
+if __name__ == "__main__":
+    print("=== Teste de Segurança (Encapsulamento) ===")
+    usuario = Usuario("Ana", "ana@example.com")
+
+    print("\nTentando definir email inválido...")
+    usuario.email = "email_invalido"
+
+    print("\nDefinindo email válido...")
+    usuario.email = "ana.silva@empresa.com"
+
+    print(f"\nEmail atual do usuário: {usuario.email}")
+
+    print("\n=== Teste de Envio por Email ===")
+    canal_email = Email()
+    sistema_email = SistemaAlerta(usuario, canal_email)
+    sistema_email.disparar("Seu pagamento foi aprovado.")
+
+    print("\n=== Teste de Envio por SMS (Polimorfismo) ===")
+    canal_sms = SMS()
+    sistema_sms = SistemaAlerta(usuario, canal_sms)
+    sistema_sms.disparar("Servidor caiu! Verifique o painel imediatamente.")
