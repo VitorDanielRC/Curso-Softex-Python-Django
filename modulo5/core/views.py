@@ -3,7 +3,11 @@ from rest_framework.response import Response
 from rest_framework import status 
 from .models import Tarefa 
 from .serializers import TarefaSerializer 
- 
+from rest_framework.exceptions import ValidationError
+from django.db import IntegrityError
+import logging
+logger = logging.getLogger(__name__)
+
 class ListaTarefasAPIView(APIView): 
     """ 
     View para listar todas as tarefas (GET). 
