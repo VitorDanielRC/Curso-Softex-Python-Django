@@ -1,64 +1,122 @@
-from rest_framework.views import APIView 
-from rest_framework.response import Response 
-from rest_framework import status 
-from .models import Tarefa 
-from .serializers import TarefaSerializer 
-from rest_framework.exceptions import ValidationError
-from django.db import IntegrityError
-import logging
-logger = logging.getLogger(__name__)
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
+from django.db.models import Count, Q
 
-class ListaTarefasAPIView(APIView): 
-    """ 
-    View para listar todas as tarefas (GET). 
-     
-    Endpoints: 
-        GET /api/tarefas/ - Lista todas as tarefas 
-    """ 
-     
-    def get(self, request, format=None): 
-        """ 
-        Retorna lista de todas as tarefas do banco. 
-         
-        Returns: 
-            Response: JSON com lista de tarefas e status 200 
-        """ 
-        # 1. BUSCAR: ORM do Django busca todos os registros 
-        tarefas = Tarefa.objects.all() 
-         
-        # 2. SERIALIZAR: Converter objetos Python → JSON 
-        # many=True: indica que é uma lista de objetos 
-        serializer = TarefaSerializer(tarefas, many=True) 
-         
-        # 3. RESPONDER: Retornar JSON com status HTTP 
+from .models import Tarefa
+from .serializers import TarefaSerializer
+
+
+class ListaTarefasAPIView(APIView):
+    """
+    Endpoint:
+        GET  /api/tarefas/   -> lista tarefas do usuário logado (não deletadas)
+        POST /api/tarefas/   -> cria nova tarefa para o usuário logado
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        """
+        Retorna lista de todas as tarefas do usuário logado
+        que NÃO estão marcadas como deletadas.
+        """
+        tarefas = Tarefa.objects.filter(
+            user=request.user,
+            deletada=False
+        )
+        serializer = TarefaSerializer(tarefas, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
     def post(self, request, format=None):
         """
         Cria uma nova tarefa.
-        Args:
-            request.data: JSON com dados da tarefa
-                {
-                    "titulo": "string",
-                    "concluida": boolean (opcional, default=False)
-                }
-        Returns:
-            201 Created: Tarefa criada com sucesso
-            400 Bad Request: Dados inválidos
+
+        Exemplo de corpo:
+        {
+            "titulo": "Estudar Django",
+            "concluida": false,
+            "prioridade": "media",
+            "prazo": "2025-01-20"
+        }
         """
-        # 1. INSTANCIAR: Criar serializer com dados recebidos
         serializer = TarefaSerializer(data=request.data)
-        # 2. VALIDAR: Checar se os dados são válidos
         if serializer.is_valid():
-            # 3. SALVAR: Persistir no banco de dados
-            serializer.save()
-            # 4. RESPONDER: Retornar objeto criado + status 201
-            return Response(
-                serializer.data,
-                status=status.HTTP_201_CREATED
-            )
-        # 5. ERRO: Retornar erros de validação + status 400
+            # Vincula a tarefa ao usuário autenticado
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TarefaEstatisticasAPIView(APIView):
+    """
+    Endpoint:
+        GET /api/tarefas/estatisticas/
+
+    Retorna:
+    {
+        "total": 10,
+        "concluidas": 6,
+        "pendentes": 4,
+        "taxa_conclusao": 0.6
+    }
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        # Considera apenas tarefas do usuário e não deletadas
+        qs = Tarefa.objects.filter(
+            user=request.user,
+            deletada=False
+        )
+
+        dados = qs.aggregate(
+            total=Count('id'),
+            concluidas=Count('id', filter=Q(concluida=True)),
+        )
+
+        total = dados['total'] or 0
+        concluidas = dados['concluidas'] or 0
+        pendentes = total - concluidas
+        taxa_conclusao = concluidas / total if total > 0 else 0
+
         return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
+            {
+                "total": total,
+                "concluidas": concluidas,
+                "pendentes": pendentes,
+                "taxa_conclusao": taxa_conclusao,
+            },
+            status=status.HTTP_200_OK
+        )
+
+
+class TarefaSoftDeleteAPIView(APIView):
+    """
+    Endpoint:
+        PATCH /api/tarefas/<pk>/soft_delete/
+
+    Marca uma tarefa como deletada sem remover do banco.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk, format=None):
+        tarefa = get_object_or_404(
+            Tarefa,
+            pk=pk,
+            user=request.user,
+            deletada=False
+        )
+
+        tarefa.deletada = True
+        tarefa.save()
+
+        return Response(
+            {"detail": "Tarefa marcada como deletada."},
+            status=status.HTTP_200_OK
         )
