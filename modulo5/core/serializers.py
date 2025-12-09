@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Tarefa
+from datetime import date
 
 class TarefaSerializer(serializers.ModelSerializer):
     """
@@ -20,9 +21,9 @@ class TarefaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tarefa
-        fields = ['id', 'user', 'titulo', 'concluida', 'criada_em']
+        fields = ['id', 'user', 'titulo', 'concluida', 'prioridade', 'prazo', 'deletada', 'criada_em']
         # Campos gerados automaticamente (não aceitos na entrada)
-        read_only_fields = ['id', 'criada_em']
+        read_only_fields = ['id', 'user', 'deletada','criada_em']
     def validate_titulo(self, value):
         """
                 Validação customizada para o campo 'titulo'.
@@ -55,3 +56,24 @@ class TarefaSerializer(serializers.ModelSerializer):
         
 
         return value
+    
+    def validate_prioridade(self, value):
+        valores = [choice[0] for choice in Tarefa.PRIORIDADE_CHOICES]
+        if value not in valores:
+            raise serializers.ValidationError("Prioridade Invalida.")
+        return value
+    def validate(self, attrs):
+        prazo = attrs.get('prazo',getattr(self.instance, 'prazo', None))
+        concluida = attrs.get('concluida', getattr(self.instance, 'concluida', False))
+        
+        
+        if not concluida and prazo is None:
+            raise serializers.ValidationError({
+                'prazo' : 'Prazo e obrigatorio'
+            })
+            
+        if prazo is not None and prazo < date.today():
+            raise serializers.ValidationError({
+                'prazo' : 'Prazo nao pode ser no passado'
+                })
+        return attrs
