@@ -47,7 +47,7 @@ class Tarefa(models.Model):
     auto_now_add=True,
     verbose_name='Criada em'
     )
-
+    
     class Meta:
         verbose_name = 'Tarefa'
         verbose_name_plural = 'Tarefas'
@@ -56,3 +56,8 @@ class Tarefa(models.Model):
     def __str__(self):
         """Representação em string (usado no admin)"""
         return f"{self.titulo} ({'✓' if self.concluida else '✗'})"
+    
+    Data_conclusao = models.DateTimeField(
+        verbose_name='Data_concluida',
+        default= False
+    )
