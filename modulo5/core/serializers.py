@@ -21,7 +21,7 @@ class TarefaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tarefa
-        fields = ['id', 'user', 'titulo', 'concluida', 'prioridade', 'prazo', 'deletada', 'criada_em']
+        fields = ['id', 'user', 'titulo', 'concluida', 'prioridade', 'prazo', 'deletada', 'criada_em', 'Data_conclusao']
         # Campos gerados automaticamente (não aceitos na entrada)
         read_only_fields = ['id', 'user', 'deletada','criada_em']
     def validate_titulo(self, value):
