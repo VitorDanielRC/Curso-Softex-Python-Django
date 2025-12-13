@@ -1,12 +1,14 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Q
-
+from django.utils import timezone
 from .models import Tarefa
 from .serializers import TarefaSerializer
+from rest_framework.decorators import action
+from django.db import transaction
 
 
 class ListaTarefasAPIView(APIView):
@@ -197,3 +199,38 @@ class DetalheTarefaAPIView(APIView):
         tarefa.delete()
         # 3. RESPONDER: 204 No Content (sucesso sem corpo de resposta)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class TarefaViewSet(viewsets.ModelViewSet):
+    queryset = Tarefa.objects.all()
+    serializer_class = TarefaSerializer
+    
+    @action(detail=True, methods=["post"], url_path="duplicar")
+    def duplicar(self, request, pk=None):
+        original = self.get_object()
+        
+        copia.concluida = False
+        copia.conclusao = None
+        
+        if hasattr(copia, "titulo") and copia.titulo:
+            copia.titulo = f"{copia.titulo} (copia)"
+            
+        copia.save()
+        
+        serializer = self.get_serializer(copia)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    
+    @action(detail=False, methods=["patch"], url_path="concluir-todas")
+    def concluir_todas(self, request):
+        qs = self.get_queryset().filter(concluida=False).exclude(prioridade="alta")
+        
+        agora = timezone.now()
+        
+        with transaction.atomic():
+            atualizadas = qs.update(concluida=True, data_conclusao=agora)
+            
+            return Response(
+                {"mensagem":"Tarefas concluidas (exceto alta prioridade).", "atualizadas":atualizadas},
+                status=status.HTTP_200_OK
+            )
