@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from .models import Tarefa
 from datetime import date
+from django.utils import timezone
+from rest_framework.exceptions import ValidationError
 
 class TarefaSerializer(serializers.ModelSerializer):
     """
@@ -76,4 +78,38 @@ class TarefaSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({
                 'prazo' : 'Prazo nao pode ser no passado'
                 })
+        return attrs
+    
+    class TarefasSeri(serializers.ModelSerializer):
+        class Meta:
+            model = Tarefa
+            fields = "_all_"
+        
+        def conclusao(self, attrs, instance = None):
+            concluida_final = attrs.get("concluida", getattr(instance, "concluida", False))
+            
+            if concluida_final is True:
+                if attrs.get("data_conclusao") is None:
+                    attrs["data_conclusao"] = None
+                
+                return attrs
+            
+            def create(self, validaçao_data):
+                validaçao_data = self.conclusao(validaçao_data, instance = instance)
+                return super().update(instance, validaçao_data)
+            
+        
+class validacao(serializers.ModelSerializer):
+    def validate(self, attrs):
+        request = self.context.get("request")
+        method = getattr(request, "method", "").upper()
+        
+        instance = getattr(self, "instance", None)
+        prioridade_final = attrs.get("prioridade", getattr(instance, "prioridade", None))
+        concluida_final = attrs.get("concluida", getattr(instance, "concluida", False))
+        
+        if prioridade_final == "alta" and concluida_final is True and method != "PUT":
+            raise ValidationError({
+                "concluida":"Tarefas de alta Prioridade"
+            })
         return attrs
