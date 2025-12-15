@@ -2,6 +2,9 @@ from django.db import models
 from django.contrib.auth.models import User
 
 class Tarefa(models.Model):
+    
+    
+    
     PRIORIDADE_CHOICES = [
     ('baixa', 'Baixa'),
     ('media', 'Média'),
