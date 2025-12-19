@@ -9,9 +9,10 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-from pathlib import Path
 import os
 import environ
+from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -41,29 +42,34 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'core',
 ]
 
 REST_FRAMEWORK = {
-'DEFAULT_AUTHENTICATION_CLASSES': (
-# Define JWT como método de autenticação PADRÃO
-'rest_framework_simplejwt.authentication.JWTAuthentication',
-),
-# Outras configurações padrão
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/day',
+        'user': '3000/day',
+    },
 }
-# Configuração do Simple JWT
+
 SIMPLE_JWT = {
-# Tempo de vida do Access Token (curto!)
-'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
-# Tempo de vida do Refresh Token (longo!)
-'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-# Define o esquema de autenticação no header HTTP
-'AUTH_HEADER_TYPES': ('Bearer',),
-# Algoritmo de criptografia
-'ALGORITHM': 'HS256',
-# Nome do campo de usuário no payload (user_id é padrão)
-'USER_ID_CLAIM': 'user_id',
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'ALGORITHM': 'HS256',
+    'USER_ID_CLAIM': 'user_id',
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
 }
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
